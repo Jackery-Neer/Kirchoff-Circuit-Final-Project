@@ -17,6 +17,8 @@ public:
     }
     T& operator()(size_t i, size_t j) { return mat_data[i][j]; }
     const T& operator()(size_t i, size_t j) const { return mat_data[i][j]; }
+    Vector<T>& operator[](size_t i) { return mat_data[i]; }
+    const Vector<T>& operator[](size_t i) const { return mat_data[i]; }
     size_t numRow() { return row; }
     size_t numCol() { return col; }
     void setRow(size_t r) { row = r; } 

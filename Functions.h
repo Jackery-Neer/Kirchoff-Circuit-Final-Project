@@ -13,3 +13,4 @@
 
 Vector<double> buildRow(std::string equation, Vector<std::string> variables);
 bool verifyVal(std::string val, Vector<std::string> variables);
+bool isDigits(const std::string& str);

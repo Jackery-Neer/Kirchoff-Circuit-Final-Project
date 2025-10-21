@@ -56,19 +56,16 @@ int main() {
         std::getline(std::cin, equation);
         equation.erase(std::remove(equation.begin(), equation.end(), ' '), equation.end());
         Vector<double> row = buildRow(equation, variables);
-        //Deals with invalid var entered
+        //Deals with invalid var entered-(down arrow)
         //Make sure to deal with outside for loop
         //Decide whether you want to break out of program or if you want to restart program 
         if (row.isEmpty()) {
             std::cout << "Invalid variable detected, please enter correct variables into equation.";
-            break;
+            return 0;
             //if decide to break program then do return 0 instead of break
         }
-
-        
-
-
-
+        //If you want to break and then continue if not correctly input vars deal with it here, for now i just return 0
+        kirchoffMatrix[i] = row;
     }
     
 

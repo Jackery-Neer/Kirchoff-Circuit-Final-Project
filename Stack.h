@@ -7,13 +7,25 @@ private:
     Vector<T> data;
 public:
     void push(const T& val) { data.push_back(val); }
-    void pop();
+    void pop() {
+        if (isEmpty())
+            throw std::out_of_range("pop() called on empty Stack");
+        data.pop_back();
+    }
     T& top() { return data[data.size() - 1]; }
     bool isEmpty() { return data.size() == 0; }
     size_t size() { return data.size(); }
     T& peek(size_t depth = 0) { return data[data.size() - 1 - depth]; }
-    void clear();
-    
+    void clear() {
+        while (!isEmpty()) 
+            pop();
+    }
+
     //For print for test cases, can prolly delete when done or keep to show how to test
-    friend std::ostream& operator<<(std::ostream& os, const Stack<T>& s);
+    friend std::ostream& operator<<(std::ostream& os, const Stack<T>& s) {
+        for (size_t i = 0; i < s.data.size(); i++) {
+            os << s.data[i] << " "
+        }
+        return os;
+    }
 };
