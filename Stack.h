@@ -24,7 +24,7 @@ public:
     //For print for test cases, can prolly delete when done or keep to show how to test
     friend std::ostream& operator<<(std::ostream& os, const Stack<T>& s) {
         for (size_t i = 0; i < s.data.size(); i++) {
-            os << s.data[i] << " "
+            os << s.data[i] << " ";
         }
         return os;
     }

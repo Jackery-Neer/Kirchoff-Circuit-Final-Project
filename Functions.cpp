@@ -144,6 +144,7 @@ Vector<double> buildRow(std::string equation, Vector<std::string> variables) {
     there is a varible past "=" 
     if the structure is reversed 
         *might be able to use if i check orignal stack and set conditions to make reverse stack
+        *also most likely if i can fix problem above, i will be able to fix this indirectly
     if missing ")", this will cause infinite loop 
     Nested parenthesis 
     if variable is not alphanumeric (ex: I_1 or I[1])
@@ -152,3 +153,13 @@ Vector<double> buildRow(std::string equation, Vector<std::string> variables) {
 //Could create lambda fn to deal with applying terms
 //Double pop method could be utilized to deal with "+" and "-"
 
+void printSolution(const Vector<std::variant<double, std::string>>& x) {
+    for (size_t i = 0; i < x.size(); i++) {
+        std::cout << "x" << i << " = ";
+        if (std::holds_alternative<double>(x[i]))
+            std::cout << std::get<double>(x[i]);
+        else
+            std::cout << std::get<std::string>(x[i]);
+        std::cout << std::endl;
+    }
+}

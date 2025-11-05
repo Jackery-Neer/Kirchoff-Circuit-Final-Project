@@ -1,4 +1,5 @@
 #include "Functions.h"
+#include <variant>
 
 int main() {
     size_t num_eq = 0;
@@ -18,7 +19,6 @@ int main() {
             num_unknowns = std::stoul(str);
             if (num_unknowns <= 0) 
                 std::cout << "Please input an integer above 0.\n";
-            num_unknowns = 0;
         }
         catch(const std::invalid_argument& e){
             std::cout << "Please input an integer above 0.\n";
@@ -38,7 +38,6 @@ int main() {
             num_eq = std::stoul(str);
             if (num_eq <= 0) 
                 std::cout << "Please input an integer above 0.\n";
-            num_eq = 0;
         }
         catch(const std::invalid_argument& e){
             std::cout << "Please input an integer above 0.\n";
@@ -48,7 +47,6 @@ int main() {
     Matrix<double> kirchoffMatrix(num_eq, num_unknowns + 1);
 
     //Utilize stack in order to deal with any form of Kirchoff Equations
-    //
     for (size_t i = 0; i < num_eq; i++) {
         std::string equation;
         std::cout << "Enter equation #" << i + 1 << ":\n";
@@ -67,6 +65,8 @@ int main() {
         //If you want to break and then continue if not correctly input vars deal with it here, for now i just return 0
         kirchoffMatrix[i] = row;
     }
+    Vector<std::variant<double, std::string>> x = kirchoffMatrix.solve();
+    printSolution(x);
     
 
 

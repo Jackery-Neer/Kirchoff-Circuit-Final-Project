@@ -1,5 +1,9 @@
 #pragma once
-#include <cstddef>
+#include <cstddef>   
+#include <stdexcept> 
+#include <utility>   
+#include <iostream>
+
 
 template <typename T>
 class Vector {
@@ -16,14 +20,57 @@ private:
         _capacity = new_capacity;
     }
 public:
+    //Default Constructor
     Vector() : data(nullptr), num_items(0), _capacity(0) {}
 
+    //Constructor
     Vector(size_t _size) : data(nullptr), num_items(_size), _capacity(_size) {
         data = new T[_capacity];
         for (size_t i = 0; i < num_items; i++)
             data[i] = T();
     }
 
+    //Copy Constructor
+    Vector(const Vector& other) : data(new T[other._capacity]), num_items(other.num_items), _capacity(other._capacity)  {
+        for (size_t i = 0; i < num_items; i++) 
+            data[i] = other.data[i];
+    }
+
+    //Copy Assignment
+    Vector& operator=(const Vector& other) {
+        if (this != &other) {
+            delete[] data;
+            _capacity = other._capacity;
+            num_items = other.num_items;
+            data = new T[_capacity];
+            for (size_t i = 0; i < num_items; i++)
+                data[i] = other.data[i];
+        }
+        return *this;
+    }
+
+    //Move Constructor
+    Vector(Vector&& other) noexcept : data(other.data), num_items(other.num_items), _capacity(other._capacity) {
+        other.data = nullptr;
+        other.num_items = 0;
+        other._capacity = 0;
+    }
+
+    //Move Assignment
+    Vector& operator=(Vector&& other) noexcept {
+        if (this != &other) {
+            delete[] data;
+            data = other.data;
+            num_items = other.num_items;
+            _capacity = other._capacity;
+            other.data = nullptr;
+            other.num_items = 0;
+            other._capacity = 0;
+        }
+        return *this;
+    }
+
+    //Destructor
     ~Vector() { delete[] data; }
 
     void push_back(const T& val) {
