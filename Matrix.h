@@ -21,6 +21,49 @@ public:
             mat_data[i] = Vector<T>(c);
         }
     }
+    Matrix(const Matrix& other) : row(other.row), col(other.col), mat_data(other.mat_data) {}
+
+    Matrix& operator=(const Matrix& other) {
+        if (this != &other) {
+            row = other.row;
+            col = other.col;
+            mat_data = other.mat_data;
+        }
+        return *this;
+    }
+
+    Matrix(Matrix&& other) noexcept : row(other.row), col(other.col), mat_data(std::move(other.mat_data)) {
+        other.row = 0;
+        other.col = 0;
+    }
+
+    Matrix& operator=(Matrix&& other) noexcept {
+        if (this != &other) {
+            row = other.row;
+            col = other.col;
+            mat_data = std::move(other.mat_data);
+            other.row = 0;
+            other.col = 0;
+        }
+        return *this;
+    }
+    void setRow(size_t r, const Vector<T>& rowVec) {
+        if (r >= row)
+            throw std::out_of_range("Row index out of range in Matrix::setRow()");
+        if (rowVec.size() != col)
+            throw std::runtime_error("Row size mismatch in Matrix::setRow()");
+        mat_data[r] = rowVec;
+    }
+
+    void printMatrix() const {
+        std::cout << "\nMatrix (" << row << "x" << col << "):\n";
+        for (size_t i = 0; i < row; i++) {
+            for (size_t j = 0; j < col; j++) {
+                std::cout << mat_data[i][j] << "\t";
+            }
+            std::cout << "\n";
+        }
+    }
     T& operator()(size_t i, size_t j) { return mat_data[i][j]; }
     const T& operator()(size_t i, size_t j) const { return mat_data[i][j]; }
     Vector<T>& operator[](size_t i) { return mat_data[i]; }
@@ -59,27 +102,21 @@ public:
             }
         }
     }
-    /*Create a function that can check to see if a variable is free (if a variable is not a pivot it is free)
-    Then create a back sub fn that will find all the unknown variables
-    print fn
-    fn that combines fns to make it so i just need to call one fn*/
-    //Add var(x1 or t1) in pivot check sec?
-    //
     Vector<std::variant<double, std::string>> backSubstitution() {
-        Vector<std::variant<double, std::string>> x(col - 1);
-        for (size_t j = 0; j < col - 1; j++) 
-            x[j] = 0.0;
-        int freeVarCount = 1;
+        Vector<std::variant<double, std::string>> x(col - 1, 0.0);
+
+        Vector<bool> isPivotCol(col - 1, false);
         for (size_t j = 0; j < col - 1; j++) {
-            bool isPivot = false;
             for (size_t i = 0; i < row; i++) {
                 if (std::fabs(mat_data[i][j]) > 1e-9) {
-                    isPivot = true;
+                    isPivotCol[j] = true;
                     break;
                 }
             }
-            if (!isPivot) {
-                x[j] = "x" + std::to_string(j);
+        }
+        for (size_t j = 0; j < col - 1; j++) {
+            if(!isPivotCol[j]) {
+                x[j] = "x" + std::to_string(j + 1);
             }
         }
         for (int i = static_cast<int>(row) - 1; i >= 0; i--) {
@@ -93,28 +130,31 @@ public:
             if (pivotCol == -1) {
                 continue;
             }
-            double sum = 0.0;
+            double rhs = mat_data[i][col - 1];
             bool dependFree = false;
             std::ostringstream depend;
+            depend << "(" << rhs;
+            if (pivotCol >= static_cast<int>(col - 1))
+                continue;
             for (size_t j = pivotCol + 1; j < col - 1; j++) {
                 if (std::holds_alternative<double>(x[j])) {
-                    sum += mat_data[i][j] * std::get<double>(x[j]);
+                    rhs -= mat_data[i][j] * std::get<double>(x[j]);
                 } else {
                     dependFree = true;
-                    depend << mat_data[i][j] << " * " << std::get<std::string>(x[j]) << " + ";  
+                    depend << " - " << mat_data[i][j] << "*" << std::get<std::string>(x[j]);  
                 }
             }
-            double rhs = static_cast<double>(mat_data[i][col - 1]) - sum;
+            if (pivotCol < 0 || pivotCol >= static_cast<int>(col)) {
+                std::cout << "[WARN] Skipping invalid pivotCol " << pivotCol
+                            << " at row " << i << " (col=" << col << ")\n";
+            continue;
+            }
+            if (pivotCol >= static_cast<int>(mat_data[i].size())) {
+                std::cout << "[ERROR] pivotCol out of range for this row!\n";
+                continue;
+            }   
             if (dependFree) {
-                depend.str("");
-                depend.clear();
-                depend << "(" << rhs;
-                for (size_t j = pivotCol + 1; j < col - 1; j++) {
-                    if(std::holds_alternative<std::string>(x[j])) {
-                        depend << " - " << mat_data[i][j] << " * " << std::get<std::string>(x[j]);
-                    }
-                }
-                depend << ") / " << mat_data[i][pivotCol];
+                depend << ") /" << mat_data[i][pivotCol];
                 x[pivotCol] = depend.str();
             } else {
                 x[pivotCol] = rhs / mat_data[i][pivotCol];
