@@ -69,7 +69,6 @@ int main() {
     }
     std::unordered_map<int, Vector<int>> adjacency;
     buildAdjacency(adjacency, branches, num_nodes);
-    //Vector<Vector<int>> allLoops = bfsLoops(adjacency);
     Vector<Vector<int>> allLoops = bfsLoops(adjacency, -1);
     for (size_t i = 0; i < allLoops.size(); i++) {
         std::cout << "Loop " << i + 1 << ": ";

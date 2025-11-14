@@ -121,6 +121,18 @@ public:
         return data[num_items - 1];
     }
 
+    T& front() {
+        if (num_items == 0)
+            throw std::out_of_range("front() called on empty Vector\n");
+        return data[0];
+    }
+
+    const T& front() const {
+        if (num_items == 0)
+            throw std::out_of_range("front() called on empty Vector\n");
+        return data[0];
+    }
+
 
     T& operator[](size_t index) {
         if (index >= num_items)

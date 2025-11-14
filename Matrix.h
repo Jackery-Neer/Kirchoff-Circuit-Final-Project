@@ -167,6 +167,4 @@ public:
         gaussianElimination();
         return backSubstitution();
     }
-
-
 };

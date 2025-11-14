@@ -12,7 +12,7 @@
 #include <cmath>
 #include <utility>
 #include <variant>
-#include "Circuit.h"
+#include "Branch.h"
 #include <queue>
 #include <unordered_map>
 

@@ -144,7 +144,7 @@ void printSolution(const Vector<std::variant<double, std::string>>& x, Vector<Br
 
 void buildAdjacency(std::unordered_map<int, Vector<int>>& adjacency, const Vector<Branch>& branches, int num_nodes) {
     for (int i = 1; i <= num_nodes; i++) {
-        adjacency[i] = Vector<int>();
+        adjacency.emplace(i, Vector<int>());
 
     }
     for (const auto& b : branches) {
@@ -153,69 +153,21 @@ void buildAdjacency(std::unordered_map<int, Vector<int>>& adjacency, const Vecto
     }
 }
 
-/*Vector<Vector<int>> bfsLoops(const std::unordered_map<int, Vector<int>>& adjacency) {
-    std::unordered_map<int, bool> visited;
-    Vector<Vector<int>> allLoops;
-    for (const auto& [node,_] : adjacency) {
-        if(visited[node]) continue;
-        std::unordered_map<int, int> parent;
-        std::queue<int> q;
-    
-        q.push(node);
-        parent[node] = -1;
-        while(!q.empty()) {
-            int current = q.front();
-            q.pop();
-            visited[current] = true;
-            if (adjacency.find(current) == adjacency.end() || adjacency.at(current).size() == 0) 
-                continue;
-            for (int neighbor : adjacency.at(current)) {
-                if(parent.find(neighbor) == parent.end()) {
-                    parent[neighbor] = current;
-                    q.push(neighbor);
-                } else if (parent[current] != neighbor && current < neighbor) {
-                    Vector<int> path1, path2, loop;
-                    std::unordered_map<int, bool> visitedA;
-                    int a = current, b = neighbor;
-                    while(a != -1) {
-                        path1.push_back(a);
-                        visitedA[a] = true;
-                        a = parent[a];
-                    }
-                    while (b != -1 && !visitedA[b]) {
-                        path2.push_back(b);
-                        b = parent[b];
-                    }
-                    for(int n : path1) loop.push_back(n);
-                    for(int i = static_cast<int>(path2.size()) - 1; i >= 0; i--) 
-                        loop.push_back(path2[i]);
-                    loop.push_back(loop[0]);
-                    for (size_t k = 1; k < loop.size(); ) {
-                        if (loop[k] == loop[k-1]) {
-                            loop.erase(loop.begin() + k);
-                        } else {
-                            ++k;
-                        }
-                    }
-                    allLoops.push_back(loop);
-                }
-            }
-        }
-    }
-    return allLoops;
-}*/
 Vector<int> buildCycle(int x, int y, const std::unordered_map<int,int>& parent) {
     std::unordered_map<int, bool> seen;
     Vector<int> pathA;
-    while (x != -1) {
+    while (x != -1 && parent.find(x) != parent.end()) {
         pathA.push_back(x);
         seen[x] = true;
-        x = parent.at(x);
+        int next = parent.at(x); 
+        x = next;
     }
     Vector<int> pathB;
-    while (y != -1 && !seen[y]) {
+    while (y != -1 && parent.find(y) != parent.end()) {
+        if (seen.find(y) != seen.end()) break;
         pathB.push_back(y);
-        y = parent.at(y);
+        int next = parent.at(y);
+        y = next;
     }
     int LCA = y; 
 
@@ -228,14 +180,7 @@ Vector<int> buildCycle(int x, int y, const std::unordered_map<int,int>& parent) 
     for (int i = static_cast<int>(pathB.size()) - 1; i >= 0; --i) {
         loop.push_back(pathB[static_cast<size_t>(i)]);
     }
-    loop.push_back(loop[0]);
-    Vector<int> cleaned;
-    for (int v : loop) {
-        if (v != 0) 
-            cleaned.push_back(v);
-    }
-    loop = std::move(cleaned);
-
+    loop.push_back(loop.at(0));
     return loop;
 }
 
@@ -249,7 +194,7 @@ Vector<Vector<int>> bfsLoops(const std::unordered_map<int, Vector<int>>& adjacen
     auto try_start = [&](int s) {
         if (visited[s]) return;
         visited[s] = true;
-        parent[s]  = -1;
+        parent[s] = -1;
         q.push(s);
         while (!q.empty()) {
             int cur = q.front(); 
@@ -259,13 +204,20 @@ Vector<Vector<int>> bfsLoops(const std::unordered_map<int, Vector<int>>& adjacen
                 continue;
 
             for (int nbr : it->second) {
+                if(nbr == 0) continue;
                 if (!visited[nbr]) {
                     visited[nbr] = true;
-                    parent[nbr]  = cur;
+                    parent[nbr] = cur;
                     q.push(nbr);
                 } else if (parent[cur] != nbr) {
                     if (cur < nbr) { 
                         Vector<int> cyc = buildCycle(cur, nbr, parent);
+                        for(int i = static_cast<int>(cyc.size()) - 1; i >= 0; i--) {
+                            if (cyc[i] == 0) {
+                                cyc.erase(i);
+                            }
+                        }
+                        cyc.push_back(cyc[0]);
                         if (!cyc.isEmpty() && cyc.size() > 2) {
                             loops.push_back(cyc);
                         }
@@ -274,6 +226,12 @@ Vector<Vector<int>> bfsLoops(const std::unordered_map<int, Vector<int>>& adjacen
             }
         }
     };
+    for (size_t i = 0; i < loops.size(); i++) {
+        std::cout << "Loop " << i + 1 << ": ";
+        for (int node : loops[i])
+            std::cout << node << " ";
+        std::cout << "\n";
+    }
     if (start_hint != -1 && adjacency.find(start_hint) != adjacency.end()) {
         try_start(start_hint);
     }
