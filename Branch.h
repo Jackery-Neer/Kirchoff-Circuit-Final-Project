@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Functions.h"
-
+//Struct for each branch that holds data and relative variable
 struct Branch{
     int startNode;
     int endNode;

@@ -5,14 +5,18 @@ bool isDigits(const std::string& str) {
 }
 
 Vector<double> buildRow(std::string equation, Vector<Branch> branches) {
+    //Stack to upload found equations onto
     Stack<std::string> eq_stack;
+    //Goes through each equation analyzing each char
     for (size_t i = 0; i < equation.size(); i++) {
         char c = equation[i];
+        //If digits, get entire variable before pushing onto stack
         if(isdigit(c)) {
             std::string num;
             while (i < equation.size() && (isdigit(equation[i]) || equation[i] == '.')) {
                 num += equation[i++];
             }
+            //Check if variable
             if (i < equation.size() && isalpha(equation[i])) {
                 eq_stack.push(num);
                 eq_stack.push("*");
@@ -39,6 +43,7 @@ Vector<double> buildRow(std::string equation, Vector<Branch> branches) {
     }
     //Code before reads string onto stack, next bit is manipulating it into the form for a proper matrix
     Vector<double> row(branches.size() + 1);
+    //Reverses stack for easier manipulation
     Stack<std::string> reverse_stack;
     double constant = 0;
     double sign = 1;
@@ -49,15 +54,20 @@ Vector<double> buildRow(std::string equation, Vector<Branch> branches) {
         eq_stack.pop();
     }
 
+    //Goes through stack dealing with each type of character
     while (!reverse_stack.isEmpty()) {
         std::string token = reverse_stack.top();
         reverse_stack.pop();
+        //If plus sign is positive
         if(token == "+") {
             sign = 1;
+        //If minus sign is negative
         } else if (token == "-") {
             sign = -1;
+        //If multiplication we just continue
         } else if (token == "*") {
             continue;
+        //If digit then look at next element to see if var
         } else if (isDigits(token)){
             constant = std::stod(token);
             have_explicit_coeff = true;
@@ -69,6 +79,7 @@ Vector<double> buildRow(std::string equation, Vector<Branch> branches) {
                     break;
                 }
             }
+            //If not test var then that is going to be on other side of equation and is voltage
             if (!test_var) {
                 aug -= constant * sign;
                 constant = 0;
@@ -76,6 +87,7 @@ Vector<double> buildRow(std::string equation, Vector<Branch> branches) {
                 have_explicit_coeff = false;
             }
 
+        //Deal with charcters on right hand side
         } else if (token == "=") {
             token = reverse_stack.top();
             reverse_stack.pop();
@@ -86,6 +98,9 @@ Vector<double> buildRow(std::string equation, Vector<Branch> branches) {
             } else if (isDigits(token)) {
                 aug += std::stod(token);
             }
+        //Deal with parenthesis
+        //Note: this was more useful with original implementation (user provides equations) 
+        //Now it probably doesn't run since I build the equations myself using a graph
         } else if(token == "(") {
             double distributer = (constant == 0 ? 1 : constant);
             constant = 0;
@@ -113,10 +128,12 @@ Vector<double> buildRow(std::string equation, Vector<Branch> branches) {
                 reverse_stack.pop();
             }
             sign = 1;
+        
         } else {
             for (size_t i = 0; i < branches.size(); i++) {
                 if (branches[i].variable == token) {
                     //+= instead of = so if two variables are the same they add together
+                    //Deals with coefficient of 1 so it doens't input zero into matrix
                     double coeff = have_explicit_coeff ? constant : 1.0;
                     row[i] += coeff * sign;
                     constant = 0;
@@ -127,6 +144,7 @@ Vector<double> buildRow(std::string equation, Vector<Branch> branches) {
             }
         }
     }
+    //Uploads augmented part onto row and passes back
     row[branches.size()] = aug;
     return row;
 }
@@ -142,11 +160,13 @@ void printSolution(const Vector<std::variant<double, std::string>>& x, Vector<Br
     }
 }
 
+
 void buildAdjacency(std::unordered_map<int, Vector<int>>& adjacency, const Vector<Branch>& branches, int num_nodes) {
     for (int i = 1; i <= num_nodes; i++) {
         adjacency.emplace(i, Vector<int>());
 
     }
+    //Adjacency to each connected node
     for (const auto& b : branches) {
         adjacency[b.startNode].push_back(b.endNode);
         adjacency[b.endNode].push_back(b.startNode);
@@ -154,7 +174,9 @@ void buildAdjacency(std::unordered_map<int, Vector<int>>& adjacency, const Vecto
 }
 
 Vector<int> buildCycle(int x, int y, const std::unordered_map<int,int>& parent) {
+    //Seen map
     std::unordered_map<int, bool> seen;
+    //Path A for one way of bfs
     Vector<int> pathA;
     while (x != -1 && parent.find(x) != parent.end()) {
         pathA.push_back(x);
@@ -162,6 +184,7 @@ Vector<int> buildCycle(int x, int y, const std::unordered_map<int,int>& parent) 
         int next = parent.at(x); 
         x = next;
     }
+    //Path B for other way of bfs
     Vector<int> pathB;
     while (y != -1 && parent.find(y) != parent.end()) {
         if (seen.find(y) != seen.end()) break;
@@ -171,6 +194,7 @@ Vector<int> buildCycle(int x, int y, const std::unordered_map<int,int>& parent) 
     }
     int LCA = y; 
 
+    //Builds loop by finding connection between path A and path B
     Vector<int> loop;
     for (size_t i = 0; i < pathA.size(); ++i) {
         loop.push_back(pathA[i]);
@@ -180,6 +204,7 @@ Vector<int> buildCycle(int x, int y, const std::unordered_map<int,int>& parent) 
     for (int i = static_cast<int>(pathB.size()) - 1; i >= 0; --i) {
         loop.push_back(pathB[static_cast<size_t>(i)]);
     }
+    //Returns loop
     loop.push_back(loop.at(0));
     return loop;
 }
@@ -190,6 +215,7 @@ Vector<Vector<int>> bfsLoops(const std::unordered_map<int, Vector<int>>& adjacen
 
     Vector<Vector<int>> loops;
     std::queue<int> q;
+    //Lambda function for bfs
 
     auto try_start = [&](int s) {
         if (visited[s]) return;
@@ -199,19 +225,28 @@ Vector<Vector<int>> bfsLoops(const std::unordered_map<int, Vector<int>>& adjacen
         while (!q.empty()) {
             int cur = q.front(); 
             q.pop();
+            //Find adjacency 
             auto it = adjacency.find(cur);
+            //If not found continue
             if (it == adjacency.end()) 
                 continue;
 
+            //If found uses map to second item to run through graph
             for (int nbr : it->second) {
                 if(nbr == 0) continue;
+                //If not visited push into queue
                 if (!visited[nbr]) {
                     visited[nbr] = true;
                     parent[nbr] = cur;
                     q.push(nbr);
+                //If the parent to current it does not equal the adjacency to the it then we have found a loop
                 } else if (parent[cur] != nbr) {
+                    //Check so I don't make multiple different loops
                     if (cur < nbr) { 
+                        //Calls build cycle
                         Vector<int> cyc = buildCycle(cur, nbr, parent);
+                        //Checks loop to make sure 0 was not input into the loop
+                        //Note: I tried doing this in buildCycle, but it did not work unless I adjusted it after passing back
                         for(int i = static_cast<int>(cyc.size()) - 1; i >= 0; i--) {
                             if (cyc[i] == 0) {
                                 cyc.erase(i);
@@ -226,6 +261,7 @@ Vector<Vector<int>> bfsLoops(const std::unordered_map<int, Vector<int>>& adjacen
             }
         }
     };
+    //Uses lambda function to build all loop equations and then prints loop equations
     for (size_t i = 0; i < loops.size(); i++) {
         std::cout << "Loop " << i + 1 << ": ";
         for (int node : loops[i])
@@ -246,6 +282,7 @@ Vector<Vector<int>> bfsLoops(const std::unordered_map<int, Vector<int>>& adjacen
 
 Vector<std::string> buildLoopEquations(const Vector<Vector<int>>& loops, const Vector<Branch>& branches) {
     Vector<std::string> equations;
+    //Loop through loops to build equations from loop 
     for (size_t i = 0; i < loops.size(); i++) {
         if (loops[i].size() < 2) continue;
         std::ostringstream eq;
@@ -253,6 +290,7 @@ Vector<std::string> buildLoopEquations(const Vector<Vector<int>>& loops, const V
         for (size_t j = 0; j + 1 < loop.size(); j++) {
             int a = loop[j];
             int b = loop[j + 1];
+            //Uses loop through branches to get values associated with the loop
             for (const auto& br : branches) {
                 if ((br.startNode == a && br.endNode == b) || (br.startNode == b && br.endNode == a)) {
                     int direction = (br.startNode == a && br.endNode == b) ? 1 : -1;
@@ -276,6 +314,9 @@ Vector<std::string> buildLoopEquations(const Vector<Vector<int>>& loops, const V
 
 Vector<std::string> buildJunctionEquations(const Vector<Branch>& branches, const Vector<int>& nodes) {
     Vector<std::string> equations;
+    //Builds junctions for each node
+    //Very simple logic, if end node it is positive, current goes through junctions
+    //If start node, current is flowing out of junction
     for (int node : nodes) {
         std::ostringstream eq;
         for (const auto& b : branches) {

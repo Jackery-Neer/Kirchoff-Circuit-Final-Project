@@ -6,6 +6,7 @@ int main() {
     int num_nodes = -1;
     size_t num_branches = 0;
     std::cout << "Welcome to the Kirchoff Complex Circuit Analysis\n";
+    //Get number of nodes from user
     while (num_nodes < 0 ) {
         std::cout << "Enter the number of nodes: ";
         std::cin >> str;
@@ -20,6 +21,7 @@ int main() {
             num_nodes = -1;
         }
     }
+    //Get number of branches from user
     while (num_branches <= 0) {
         std::cout << "Enter the number of branches: ";
         std::cin >> str;
@@ -36,6 +38,7 @@ int main() {
     }
     std::cout << "Please input the braches with values correspondent to relative concepts:\n";
     std::cout << "(startNode  endNode  total_resistance  total_voltage)\n";
+    //Gets values associated with each branch from user and uploads to branch struct
     Vector<Branch> branches;
     for (size_t i = 0; i < num_branches; i++) {
         std::string branch;
@@ -68,7 +71,9 @@ int main() {
         branches.push_back(b);
     }
     std::unordered_map<int, Vector<int>> adjacency;
+    //Builds adjacency for each node
     buildAdjacency(adjacency, branches, num_nodes);
+    //Builds loop equations onto allLoops
     Vector<Vector<int>> allLoops = bfsLoops(adjacency, -1);
     for (size_t i = 0; i < allLoops.size(); i++) {
         std::cout << "Loop " << i + 1 << ": ";
@@ -76,29 +81,36 @@ int main() {
             std::cout << node << " ";
         std::cout << "\n";
     }
+    //Makes equations
     Vector<std::string> loopeqs = buildLoopEquations(allLoops, branches);
     Vector<int> nodes;
 
     for(int i = 0; i < num_nodes; i++) {
         nodes.push_back(i + 1);
     }
-
+    //Builds junction equations
     Vector<std::string> junctioneqs = buildJunctionEquations(branches, nodes);
+    //Adds junction equations to loopeqs so I have all equations in one data structure
     for (const auto& eq : junctioneqs) {
         loopeqs.push_back(eq);
     }
     size_t num_eq = loopeqs.size();
-
+    //Matrix with size number of equations as rows and number of branches as columns
+    //Note: the +1 is the augment
     Matrix<double> kirchoffMatrix(num_eq, num_branches + 1);
+    //Loops through equations building each row for the matrix and setting the row to the matrix
     for (size_t i = 0; i < loopeqs.size(); i++) {
         Vector<double> row = buildRow(loopeqs[i], branches);
         kirchoffMatrix.setRow(i, row);
     }
+    //Output equations
     std::cout << "\n===== Parsed Equations =====\n";
     for (size_t i = 0; i < loopeqs.size(); i++)
         std::cout << "Eq " << i + 1 << ": " << loopeqs[i] << "\n";
+    //Output Matrix
     std::cout << "\n===== Constructed Matrix =====\n";
     kirchoffMatrix.printMatrix();
     Vector<std::variant<double, std::string>> x = kirchoffMatrix.solve();
+    //Print solution to system
     printSolution(x, branches);
 }
